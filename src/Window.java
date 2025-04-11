@@ -86,7 +86,7 @@ public class Window implements ActionListener{
 
         JButton cell = (JButton)e.getSource();
         int cellValue = ms.getCell(row, col);
-        System.out.println(row + " " + col);
+        // System.out.println(row + " " + col);
         
         if (cellValue == 0){
             revealZeros(row, col);
@@ -100,6 +100,8 @@ public class Window implements ActionListener{
         }
     }
 
+    // Uses recursive algorithm to find all connected cells that have a value of 0
+    // Stops when encounters cell that has already been seen or doesn't have a value of 0.
     private void revealZeros(int row, int col){
         JButton curCell = (JButton)gamePanel.getComponent(row * ms.getBoardWidth() + col);
         if (!curCell.getText().equals("")){
@@ -118,10 +120,17 @@ public class Window implements ActionListener{
             curCell.setText(" ");
         }
 
+        // Check adjacent cells
         if (row > 0) revealZeros(row - 1, col);
         if (row < ms.getBoardHeight() - 1) revealZeros(row + 1, col);
         if (col > 0) revealZeros(row, col -1);
         if (col < ms.getBoardWidth() - 1) revealZeros(row, col + 1);
+
+        // Check for diagonal cells
+        if (row > 0 && col > 0) revealZeros(row - 1, col - 1);
+        if (row < ms.getBoardHeight() - 1 && col < ms.getBoardWidth() - 1) revealZeros(row + 1, col + 1);
+        if (row < ms.getBoardHeight() - 1 && col > 0) revealZeros(row + 1, col - 1);
+        if (row > 0 && col < ms.getBoardWidth() - 1) revealZeros(row - 1, col + 1);
     }
 
     private void revealNumber(JButton cell, int cellValue){

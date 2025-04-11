@@ -6,28 +6,30 @@ public class Minesweeper {
 
     private int[][] board;
     private boolean boardCreated = false;
-    private int boardWidth = 8, boardHeight = 8;
-    private int numMines = 10;
+    private int boardWidth = 16, boardHeight = 16;
+    private int numMines = 40;
     
     public Minesweeper(){
         Window window = new Window(this);
     }
 
-    // safeX and safeY are the coords of the first click
-    public void generateBoard(int safeX, int safeY){
+    // safeY(row) and safeX(col) are the coords of the first click
+    public void generateBoard(int safeY, int safeX){
         board = new int[boardWidth][boardHeight];
 
         Random random = new Random();
 
         int count = 0;
 
+        // TODO: ADD ADDITIONAL CONSTRAINT FOR MAX # OF MINES NEXT TO EACH OTHER
+
         // Populate the board randomly with numMines number of mines
         while (count < numMines){
             int x = random.nextInt(boardWidth);
             int y = random.nextInt(boardHeight);
 
-            // Bombs can't be within 9x9 region of first click
-            if (Math.abs(x - safeX) > 1 && Math.abs(y - safeY) > 1){
+            // Bombs can't be within 3x3 surrounding area of first click
+            if (Math.abs(x - safeX) > 1 || Math.abs(y - safeY) > 1){
                 if (board[y][x] != -1){
                     board[y][x] = -1;
                     count++;
