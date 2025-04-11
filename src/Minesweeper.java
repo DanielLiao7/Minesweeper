@@ -5,13 +5,12 @@ import java.util.Random;
 public class Minesweeper {
 
     private int[][] board;
+    private boolean boardCreated = false;
     private int boardWidth = 8, boardHeight = 8;
     private int numMines = 10;
     
     public Minesweeper(){
-        generateBoard(4, 4);
-
-        Window window = new Window(this, board);
+        Window window = new Window(this);
     }
 
     // safeX and safeY are the coords of the first click
@@ -45,12 +44,7 @@ public class Minesweeper {
             }
         }
 
-        for (int row = 0; row < board.length; row++){
-            for (int col = 0; col < board[row].length; col++){
-                System.out.print(board[row][col] + " ");
-            }
-            System.out.println("");
-        }
+        boardCreated = true;
     }
 
     public int numNeighborMines(int y, int x){
@@ -112,5 +106,21 @@ public class Minesweeper {
 
     public static void main(String[] args) {
         Minesweeper ms = new Minesweeper();
+    }
+
+    public boolean boardCreated(){
+        return boardCreated;
+    }
+
+    public int getCell(int row, int col){
+        return board[row][col];
+    }
+
+    public int getBoardWidth(){
+        return boardWidth;
+    }
+
+    public int getBoardHeight(){
+        return boardHeight;
     }
 }
