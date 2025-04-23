@@ -114,8 +114,12 @@ public class Minesweeper {
         return boardCreated;
     }
 
-    public int getCell(int row, int col){
+    public int getCellValue(int row, int col){
         return board[row][col];
+    }
+
+    public int getNumMines(){
+        return numMines;
     }
 
     public int getBoardWidth(){
