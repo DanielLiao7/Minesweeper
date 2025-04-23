@@ -31,7 +31,7 @@ public class Minesweeper {
             // Bombs can't be within 3x3 surrounding area of first click
             if (Math.abs(x - safeX) > 1 || Math.abs(y - safeY) > 1){
                 if (board[y][x] != -1){
-                    board[y][x] = -1;
+                    board[y][x] = -1;  // -1 used to represent bombs
                     count++;
                 }
             }

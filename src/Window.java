@@ -1,3 +1,7 @@
+/**
+ *  Daniel Liao - 2025
+ */
+
 package Project.src;
 
 import java.awt.event.*;
@@ -21,8 +25,17 @@ public class Window{
     private JPanel uiPanel;
     private final int UI_HEIGHT = 50;  // Height of the UI panel
 
+    private Border lowerBevel;
+    private Border raisedBevel;
+
+    // Save images so they don't have to be recreated every time
     private Image flagImg;
     private Image mineImg;
+
+    // Referenced: https://codewithcurious.com/projects/stop-watch-using-java-swing-2/
+    private JLabel timeLabel;
+    private Timer timer;
+    private int elapsedTime = 0;  // Elapsed time in seconds
 
     public Window(Minesweeper ms){
         this.ms = ms;
@@ -52,15 +65,41 @@ public class Window{
         contentPane.setLayout(new BorderLayout(0, 5));  // Adds padding between panels
         frame.setContentPane(contentPane);
 
+        // Create borders
+        lowerBevel = BorderFactory.createLoweredBevelBorder();
+        raisedBevel = BorderFactory.createRaisedBevelBorder();
+
         // Setup UI Panel
-        uiPanel = new JPanel(null);
-        uiPanel.setBorder(BorderFactory.createLoweredBevelBorder());
+        uiPanel = new JPanel(new BorderLayout(0, 0));
+        // Create a compound border to add padding to the bevel border
+        Border padding = new EmptyBorder(5, 5, 5, 5);
+        Border compound = BorderFactory.createCompoundBorder(lowerBevel, padding);
+        uiPanel.setBorder(compound);
         uiPanel.setPreferredSize(new Dimension(BOARD_WIDTH, UI_HEIGHT));
         contentPane.add(uiPanel, BorderLayout.PAGE_START);
 
+        // Setup Game Timer
+        // timeLabel holds the text
+        timeLabel = new JLabel("000", JLabel.CENTER);
+        timeLabel.setFont(new Font("Arial", Font.PLAIN, 20));
+        timeLabel.setBorder(new EmptyBorder(0, 10, 0, 10));
+        timeLabel.setOpaque(true);
+        timeLabel.setForeground(Color.red);
+        timeLabel.setBackground(Color.black);
+        uiPanel.add(timeLabel, BorderLayout.LINE_END);
+
+        // Setup actual timer
+        // 1000 ms delay to count seconds
+        timer = new Timer(1000, new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                elapsedTime += 1;
+                updateTimeLabel();
+            }
+        });
+
         // Setup Game Board Panel
         gamePanel = new JPanel(new GridLayout(ms.getBoardWidth(), ms.getBoardHeight(), 0, 0));  // Grid Layout used to automatically organize buttons
-        gamePanel.setBorder(BorderFactory.createLoweredBevelBorder());
+        gamePanel.setBorder(lowerBevel);
         gamePanel.setPreferredSize(new Dimension(BOARD_WIDTH, BOARD_WIDTH));
         contentPane.add(gamePanel, BorderLayout.CENTER);
 
@@ -82,10 +121,11 @@ public class Window{
                 JButton newButton = new JButton();
                 newButton.setContentAreaFilled(false);
                 newButton.setFocusPainted(false);
-                newButton.setBorder(BorderFactory.createRaisedBevelBorder());
+                newButton.setBorder(raisedBevel);
                 newButton.setFont(new Font("Arial Black", Font.PLAIN, 15));
                 newButton.setActionCommand(row + " " + col);
                 newButton.setName("open");
+                // Add Mouse Click detection to buttons 
                 newButton.addMouseListener(new MouseAdapter() {
                     @Override
                     public void mousePressed(MouseEvent e) {
@@ -103,6 +143,7 @@ public class Window{
                         // Check for right click press
                         else if (SwingUtilities.isRightMouseButton(e)){
                             if (newButton.getName().equals("open")){
+                                // Logic for placing and removing flags
                                 if (flagImg != null){
                                     Image newImg = flagImg.getScaledInstance(newButton.getWidth() - 10, newButton.getHeight() - 10, Image.SCALE_FAST);
                                     newButton.setIcon(new ImageIcon(newImg));
@@ -129,9 +170,13 @@ public class Window{
     }
 
     private void cellLeftCLick(JButton cell, int row, int col) {
+        // Generate the minesweeper board on the first click
         if (!ms.boardCreated()){
-            System.out.println("Board Generated");
             ms.generateBoard(row, col);
+            System.out.println("Board Generated");
+
+            // Start the timer
+            timer.start();
         }
 
         int cellValue = ms.getCellValue(row, col);
@@ -142,6 +187,10 @@ public class Window{
                 revealZeros(row, col);
             }
             else if (cellValue == -1){
+                // stop the timer
+                timer.stop();
+
+                // Check if mine image exists, if not use text instead
                 if (mineImg != null){
                     Image newImg = mineImg.getScaledInstance(cell.getWidth() - 10, cell.getHeight() - 10, Image.SCALE_FAST);
                     cell.setIcon(new ImageIcon(newImg));
@@ -151,7 +200,12 @@ public class Window{
                     cell.setText("X");
                     cell.setName("mine");
                 }
+                cell.setBorder(lowerBevel);
+                cell.setBackground(Color.lightGray);
+                cell.setOpaque(true);
                 System.out.println("Game Over!");
+
+                revealMines();
             }
             else {
                 revealNumber(cell, cellValue);
@@ -173,7 +227,7 @@ public class Window{
             return;
         }
         else {
-            curCell.setBorder(BorderFactory.createLoweredBevelBorder());
+            curCell.setBorder(lowerBevel);
             // Ref https://stackoverflow.com/questions/1065691/how-to-set-the-background-color-of-a-jbutton-on-the-mac-os
             curCell.setBackground(Color.lightGray);
             curCell.setOpaque(true);
@@ -194,7 +248,7 @@ public class Window{
     }
 
     private void revealNumber(JButton cell, int cellValue){
-        cell.setBorder(BorderFactory.createLoweredBevelBorder());
+        cell.setBorder(lowerBevel);
         // Ref https://stackoverflow.com/questions/1065691/how-to-set-the-background-color-of-a-jbutton-on-the-mac-os
         cell.setBackground(Color.lightGray);
         cell.setOpaque(true);
@@ -228,5 +282,34 @@ public class Window{
 
         cell.setText(cellValue + "");
         cell.setName("checked");
+    }
+
+    private void revealMines(){
+        for (int row = 0; row < ms.getBoardHeight(); row++){
+            for (int col = 0; col < ms.getBoardWidth(); col++){
+                if (ms.getCellValue(row, col) == -1){
+                    JButton curCell = (JButton)gamePanel.getComponent(row * ms.getBoardWidth() + col);
+                    if (curCell.getName().equals("open")){
+                        if (mineImg != null){
+                            Image newImg = mineImg.getScaledInstance(curCell.getWidth() - 10, curCell.getHeight() - 10, Image.SCALE_FAST);
+                            curCell.setIcon(new ImageIcon(newImg));
+                            curCell.setName("mine");
+                        }
+                        else{
+                            curCell.setText("X");
+                            curCell.setName("mine");
+                        }
+                        curCell.setBorder(lowerBevel);
+                        curCell.setBackground(Color.lightGray);
+                        curCell.setOpaque(true);
+                    }
+                }
+            }
+        }
+    }
+
+    private void updateTimeLabel() {
+        String time = String.format("%03d", elapsedTime);
+        timeLabel.setText(time);
     }
 }
