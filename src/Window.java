@@ -37,13 +37,20 @@ public class Window{
     private Timer timer;
     private int elapsedTime = 0;  // Elapsed time in seconds
 
+    private JLabel flagLabel;
+    private int numFlags;
+
+    private boolean gameOver = false;
+
     public Window(Minesweeper ms){
         this.ms = ms;
+
+        numFlags = ms.getNumMines();
 
         generateFrame();
 
         // Make frame visible
-        frame.setVisible(true);;
+        frame.setVisible(true);
     }
 
     private void generateFrame(){
@@ -68,6 +75,22 @@ public class Window{
         // Create borders
         lowerBevel = BorderFactory.createLoweredBevelBorder();
         raisedBevel = BorderFactory.createRaisedBevelBorder();
+
+        // Initialize Image Icons
+        try{
+            flagImg = ImageIO.read(new File(System.getProperty("user.dir") + "\\res\\images\\flag.png"));
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+
+        try{
+            mineImg = ImageIO.read(new File(System.getProperty("user.dir") + "\\res\\images\\mine.png"));
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+
+        // Change the icon of the JFrame to be the mine
+        frame.setIconImage(mineImg);
 
         // Setup UI Panel
         uiPanel = new JPanel(new BorderLayout(0, 0));
@@ -97,24 +120,21 @@ public class Window{
             }
         });
 
+        // Setup label that displays # of flags left
+        flagLabel = new JLabel("" + numFlags, JLabel.CENTER);
+        flagLabel.setFont(new Font("Arial", Font.PLAIN, 20));
+        flagLabel.setBorder(new EmptyBorder(0, 10, 0, 10));
+        flagLabel.setOpaque(true);
+        flagLabel.setForeground(Color.black);
+        Image newImg = flagImg.getScaledInstance(25, 25, Image.SCALE_FAST);
+        flagLabel.setIcon(new ImageIcon(newImg));
+        uiPanel.add(flagLabel, BorderLayout.LINE_START);
+
         // Setup Game Board Panel
         gamePanel = new JPanel(new GridLayout(ms.getBoardWidth(), ms.getBoardHeight(), 0, 0));  // Grid Layout used to automatically organize buttons
         gamePanel.setBorder(lowerBevel);
         gamePanel.setPreferredSize(new Dimension(BOARD_WIDTH, BOARD_WIDTH));
         contentPane.add(gamePanel, BorderLayout.CENTER);
-
-        // Initialize Image Icons
-        try{
-            flagImg = ImageIO.read(new File(System.getProperty("user.dir") + "\\res\\images\\flag.png"));
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
-
-        try{
-            mineImg = ImageIO.read(new File(System.getProperty("user.dir") + "\\res\\images\\mine.png"));
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
 
         for (int row = 0; row < ms.getBoardHeight(); row++){
             for (int col = 0; col < ms.getBoardWidth(); col++){
@@ -129,35 +149,41 @@ public class Window{
                 newButton.addMouseListener(new MouseAdapter() {
                     @Override
                     public void mousePressed(MouseEvent e) {
-                        // Check for left click press
-                        if (SwingUtilities.isLeftMouseButton(e)){
-                            if (newButton.getName().equals("open")){
-                                String[] split = newButton.getActionCommand().split(" ");
-                                int r = Integer.parseInt(split[0]);
-                                int c = Integer.parseInt(split[1]);
-                                // System.out.println(r + " " + c);
-                                cellLeftCLick(newButton, r, c);
-                            }
-                            
-                        }
-                        // Check for right click press
-                        else if (SwingUtilities.isRightMouseButton(e)){
-                            if (newButton.getName().equals("open")){
-                                // Logic for placing and removing flags
-                                if (flagImg != null){
-                                    Image newImg = flagImg.getScaledInstance(newButton.getWidth() - 10, newButton.getHeight() - 10, Image.SCALE_FAST);
-                                    newButton.setIcon(new ImageIcon(newImg));
-                                    newButton.setName("flagged");
+                        if (!gameOver){
+                            // Check for left click press
+                            if (SwingUtilities.isLeftMouseButton(e)){
+                                if (newButton.getName().equals("open")){
+                                    String[] split = newButton.getActionCommand().split(" ");
+                                    int r = Integer.parseInt(split[0]);
+                                    int c = Integer.parseInt(split[1]);
+                                    // System.out.println(r + " " + c);
+                                    cellLeftClick(newButton, r, c);
                                 }
-                                else{
-                                    newButton.setText("F");
-                                    newButton.setName("flagged");
-                                }
+                                
                             }
-                            else if (newButton.getName().equals("flagged")){
-                                newButton.setText("");
-                                newButton.setIcon(null);
-                                newButton.setName("open");
+                            // Check for right click press
+                            else if (SwingUtilities.isRightMouseButton(e)){
+                                if (newButton.getName().equals("open")){
+                                    // Logic for placing and removing flags
+                                    if (flagImg != null){
+                                        Image newImg = flagImg.getScaledInstance(newButton.getWidth() - 10, newButton.getHeight() - 10, Image.SCALE_FAST);
+                                        newButton.setIcon(new ImageIcon(newImg));
+                                        newButton.setName("flagged");
+                                    }
+                                    else{
+                                        newButton.setText("F");
+                                        newButton.setName("flagged");
+                                    }
+                                    numFlags--;
+                                    flagLabel.setText("" + numFlags);
+                                }
+                                else if (newButton.getName().equals("flagged")){
+                                    newButton.setText("");
+                                    newButton.setIcon(null);
+                                    newButton.setName("open");
+                                    numFlags++;
+                                    flagLabel.setText("" + numFlags);
+                                }
                             }
                         }
                     }
@@ -169,7 +195,7 @@ public class Window{
         frame.pack(); // Makes everything the desired size and removes extra space
     }
 
-    private void cellLeftCLick(JButton cell, int row, int col) {
+    private void cellLeftClick(JButton cell, int row, int col) {
         // Generate the minesweeper board on the first click
         if (!ms.boardCreated()){
             ms.generateBoard(row, col);
@@ -203,6 +229,7 @@ public class Window{
                 cell.setBorder(lowerBevel);
                 cell.setBackground(Color.lightGray);
                 cell.setOpaque(true);
+                gameOver = true;
                 System.out.println("Game Over!");
 
                 revealMines();
@@ -285,14 +312,17 @@ public class Window{
     }
 
     private void revealMines(){
+        JButton button = (JButton)gamePanel.getComponent(0);
+        Image newImg = mineImg.getScaledInstance(button.getWidth() - 10, button.getHeight() - 10, Image.SCALE_FAST);
+        ImageIcon mineIcon = new ImageIcon(newImg);
+
         for (int row = 0; row < ms.getBoardHeight(); row++){
             for (int col = 0; col < ms.getBoardWidth(); col++){
                 if (ms.getCellValue(row, col) == -1){
                     JButton curCell = (JButton)gamePanel.getComponent(row * ms.getBoardWidth() + col);
                     if (curCell.getName().equals("open")){
                         if (mineImg != null){
-                            Image newImg = mineImg.getScaledInstance(curCell.getWidth() - 10, curCell.getHeight() - 10, Image.SCALE_FAST);
-                            curCell.setIcon(new ImageIcon(newImg));
+                            curCell.setIcon(mineIcon);
                             curCell.setName("mine");
                         }
                         else{
