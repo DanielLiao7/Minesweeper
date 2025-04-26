@@ -172,16 +172,20 @@ public class Window{
 
             @Override
             public void mousePressed(MouseEvent e){
-                faceButton.setBorder(lowerBevel);
-                faceButton.setBackground(Color.lightGray);
+                if (SwingUtilities.isLeftMouseButton(e)){
+                    faceButton.setBorder(lowerBevel);
+                    faceButton.setBackground(Color.lightGray);
+                }
             }
 
             @Override
             public void mouseReleased(MouseEvent e) {
                 if (mouseOn){
-                    faceButton.setBorder(raisedBevel);
-                    faceButton.setBackground(defaultButtonColor);
-                    resetGame();
+                    if (SwingUtilities.isLeftMouseButton(e)){
+                        faceButton.setBorder(raisedBevel);
+                        faceButton.setBackground(defaultButtonColor);
+                        resetGame();    
+                    }
                 }
                 
             }
@@ -364,6 +368,8 @@ public class Window{
         }
 
         if (hasWon()){
+            timer.stop();
+            gameOver = true;
             System.out.println("You Finished!");
             faceButton.setIcon(sunglassesFaceIcon);
         }
