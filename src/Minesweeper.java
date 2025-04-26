@@ -1,4 +1,6 @@
-package Project.src;
+/**
+ *  Daniel Liao - 2025
+ */
 
 import java.util.Random;
 
@@ -20,9 +22,7 @@ public class Minesweeper {
         Random random = new Random();
 
         int count = 0;
-
-        // TODO: ADD ADDITIONAL CONSTRAINT FOR MAX # OF MINES NEXT TO EACH OTHER
-
+        
         // Populate the board randomly with numMines number of mines
         while (count < numMines){
             int x = random.nextInt(boardWidth);
@@ -112,6 +112,10 @@ public class Minesweeper {
 
     public boolean boardCreated(){
         return boardCreated;
+    }
+
+    public void setBoardCreated(boolean boardCreated){
+        this.boardCreated = boardCreated;
     }
 
     public int getCellValue(int row, int col){

@@ -2,8 +2,6 @@
  *  Daniel Liao - 2025
  */
 
-package Project.src;
-
 import java.awt.event.*;
 import java.io.File;
 import java.io.IOException;
@@ -35,22 +33,29 @@ public class Window{
     // Referenced: https://codewithcurious.com/projects/stop-watch-using-java-swing-2/
     private JLabel timeLabel;
     private Timer timer;
-    private int elapsedTime = 0;  // Elapsed time in seconds
+    private int elapsedTime;  // Elapsed time in seconds
 
     private JLabel flagLabel;
     private int numFlags;
 
-    private boolean gameOver = false;
+    private JButton faceButton;
+    private int faceButtonWidth = 40;
+    private ImageIcon smileyFaceIcon;
+    private ImageIcon deadFaceIcon;
+    private ImageIcon surprisedFaceIcon;
+    private ImageIcon sunglassesFaceIcon;
+    private Color defaultButtonColor;
+
+    private boolean gameOver;
 
     public Window(Minesweeper ms){
         this.ms = ms;
 
+        gameOver = false;
+        elapsedTime = 0;
         numFlags = ms.getNumMines();
 
         generateFrame();
-
-        // Make frame visible
-        frame.setVisible(true);
     }
 
     private void generateFrame(){
@@ -66,7 +71,7 @@ public class Window{
         frame.setLocationRelativeTo(null);  // Centers the Window in the screen
 
         // Create content pane to house UI and game panels
-        contentPane =  new JPanel();
+        contentPane = new JPanel();
         // Ref: https://stackoverflow.com/questions/21167133/adding-vertical-spacing-to-north-component-in-borderlayout
         contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));  // Adds padding between edges of window and panels
         contentPane.setLayout(new BorderLayout(0, 5));  // Adds padding between panels
@@ -130,6 +135,85 @@ public class Window{
         flagLabel.setIcon(new ImageIcon(newImg));
         uiPanel.add(flagLabel, BorderLayout.LINE_START);
 
+        //Setup smiley face images
+        try{
+            Image img = ImageIO.read(new File(System.getProperty("user.dir") + "\\res\\images\\faces\\smile.png"));
+            newImg = img.getScaledInstance(UI_HEIGHT - 18, UI_HEIGHT - 18, Image.SCALE_DEFAULT);
+            smileyFaceIcon = new ImageIcon(newImg);
+
+            img = ImageIO.read(new File(System.getProperty("user.dir") + "\\res\\images\\faces\\dead.png"));
+            newImg = img.getScaledInstance(faceButtonWidth - 10, faceButtonWidth - 10, Image.SCALE_FAST);
+            deadFaceIcon = new ImageIcon(newImg);
+
+            img = ImageIO.read(new File(System.getProperty("user.dir") + "\\res\\images\\faces\\surprised.png"));
+            newImg = img.getScaledInstance(faceButtonWidth - 10, faceButtonWidth - 10, Image.SCALE_FAST);
+            surprisedFaceIcon = new ImageIcon(newImg);
+
+            img = ImageIO.read(new File(System.getProperty("user.dir") + "\\res\\images\\faces\\sunglasses.png"));
+            newImg = img.getScaledInstance(faceButtonWidth - 10, faceButtonWidth - 10, Image.SCALE_FAST);
+            sunglassesFaceIcon = new ImageIcon(newImg);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+
+        // Setup button with smiley face on it that allows you to reset the game
+        faceButton = new JButton(smileyFaceIcon);
+        faceButton.setPreferredSize(new Dimension(UI_HEIGHT - 15, UI_HEIGHT - 15));
+        faceButton.setMinimumSize(new Dimension(UI_HEIGHT - 15, UI_HEIGHT - 15));
+        faceButton.setContentAreaFilled(false);
+        faceButton.setFocusPainted(false);
+        defaultButtonColor = faceButton.getBackground();
+        faceButton.setOpaque(true);
+        padding = new EmptyBorder(3, 3, 3, 3);
+        compound = BorderFactory.createCompoundBorder(raisedBevel, padding);
+        faceButton.setBorder(compound);
+        faceButton.addMouseListener(new MouseAdapter() {
+            private boolean mouseOn = false;
+
+            @Override
+            public void mousePressed(MouseEvent e){
+                faceButton.setBorder(lowerBevel);
+                faceButton.setBackground(Color.lightGray);
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                if (mouseOn){
+                    faceButton.setBorder(raisedBevel);
+                    faceButton.setBackground(defaultButtonColor);
+                    resetGame();
+                }
+                
+            }
+
+            @Override
+            public void mouseEntered(MouseEvent e){
+                mouseOn = true;
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e){
+                faceButton.setBorder(raisedBevel);
+                faceButton.setBackground(defaultButtonColor);
+                mouseOn = false;
+            }
+        });
+
+        // Referenced https://stackoverflow.com/questions/35338507/borderlayout-doesnt-honor-maximumsize
+        JPanel centerPanel = new JPanel(new GridBagLayout());
+        centerPanel.add(faceButton);
+        uiPanel.add(centerPanel, BorderLayout.CENTER);
+
+        // Generates the minesweeper grid
+        generateButtonGrid();
+
+        frame.pack(); // Makes everything the desired size and removes extra space
+
+        // Make frame visible
+        frame.setVisible(true);
+    }
+
+    private void generateButtonGrid(){
         // Setup Game Board Panel
         gamePanel = new JPanel(new GridLayout(ms.getBoardWidth(), ms.getBoardHeight(), 0, 0));  // Grid Layout used to automatically organize buttons
         gamePanel.setBorder(lowerBevel);
@@ -147,43 +231,83 @@ public class Window{
                 newButton.setName("open");
                 // Add Mouse Click detection to buttons 
                 newButton.addMouseListener(new MouseAdapter() {
+                    private boolean mouseOn = false;
+
                     @Override
                     public void mousePressed(MouseEvent e) {
                         if (!gameOver){
-                            // Check for left click press
-                            if (SwingUtilities.isLeftMouseButton(e)){
-                                if (newButton.getName().equals("open")){
-                                    String[] split = newButton.getActionCommand().split(" ");
-                                    int r = Integer.parseInt(split[0]);
-                                    int c = Integer.parseInt(split[1]);
-                                    // System.out.println(r + " " + c);
-                                    cellLeftClick(newButton, r, c);
+                            if (newButton.getName().equals("open")){
+                                if (SwingUtilities.isLeftMouseButton(e)){
+                                    newButton.setBorder(lowerBevel);
+                                    // Ref https://stackoverflow.com/questions/1065691/how-to-set-the-background-color-of-a-jbutton-on-the-mac-os
+                                    newButton.setBackground(Color.lightGray);
+                                    newButton.setOpaque(true);
+                                    faceButton.setIcon(surprisedFaceIcon);
                                 }
-                                
                             }
-                            // Check for right click press
-                            else if (SwingUtilities.isRightMouseButton(e)){
-                                if (newButton.getName().equals("open")){
-                                    // Logic for placing and removing flags
-                                    if (flagImg != null){
-                                        Image newImg = flagImg.getScaledInstance(newButton.getWidth() - 10, newButton.getHeight() - 10, Image.SCALE_FAST);
-                                        newButton.setIcon(new ImageIcon(newImg));
-                                        newButton.setName("flagged");
+                        }
+                    }
+
+                    @Override
+                    public void mouseReleased(MouseEvent e) {
+                        if (!gameOver){
+                            if (mouseOn){
+                                // Check for left click press
+                                if (SwingUtilities.isLeftMouseButton(e)){
+                                    if (newButton.getName().equals("open")){
+                                        faceButton.setIcon(smileyFaceIcon);
+
+                                        String[] split = newButton.getActionCommand().split(" ");
+                                        int r = Integer.parseInt(split[0]);
+                                        int c = Integer.parseInt(split[1]);
+                                        // System.out.println(r + " " + c);
+                                        cellLeftClick(newButton, r, c);
                                     }
-                                    else{
-                                        newButton.setText("F");
-                                        newButton.setName("flagged");
+                                }
+                                // Check for right click press
+                                else if (SwingUtilities.isRightMouseButton(e)){
+                                    if (newButton.getName().equals("open")){
+                                        // Logic for placing and removing flags
+                                        if (flagImg != null){
+                                            Image newImg = flagImg.getScaledInstance(newButton.getWidth() - 10, newButton.getHeight() - 10, Image.SCALE_FAST);
+                                            newButton.setIcon(new ImageIcon(newImg));
+                                            newButton.setName("flagged");
+                                        }
+                                        else{
+                                            newButton.setText("F");
+                                            newButton.setName("flagged");
+                                        }
+                                        numFlags--;
+                                        flagLabel.setText("" + numFlags);
                                     }
-                                    numFlags--;
-                                    flagLabel.setText("" + numFlags);
+                                    else if (newButton.getName().equals("flagged")){
+                                        newButton.setText("");
+                                        newButton.setIcon(null);
+                                        newButton.setName("open");
+                                        numFlags++;
+                                        flagLabel.setText("" + numFlags);
+                                    }
                                 }
-                                else if (newButton.getName().equals("flagged")){
-                                    newButton.setText("");
-                                    newButton.setIcon(null);
-                                    newButton.setName("open");
-                                    numFlags++;
-                                    flagLabel.setText("" + numFlags);
-                                }
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void mouseEntered(MouseEvent e){
+                        if (!gameOver){
+                            mouseOn = true;
+                        }
+                    }
+
+                    @Override
+                    public void mouseExited(MouseEvent e){
+                        if (!gameOver){
+                            if (newButton.getName().equals("open")){
+                                newButton.setBorder(raisedBevel);
+                                newButton.setBackground(defaultButtonColor);
+                                newButton.setOpaque(true);
+                                faceButton.setIcon(smileyFaceIcon);
+                                mouseOn = false;
                             }
                         }
                     }
@@ -191,8 +315,6 @@ public class Window{
                 gamePanel.add(newButton);
             }
         }
-
-        frame.pack(); // Makes everything the desired size and removes extra space
     }
 
     private void cellLeftClick(JButton cell, int row, int col) {
@@ -233,10 +355,17 @@ public class Window{
                 System.out.println("Game Over!");
 
                 revealMines();
+
+                faceButton.setIcon(deadFaceIcon);
             }
             else {
                 revealNumber(cell, cellValue);
             }
+        }
+
+        if (hasWon()){
+            System.out.println("You Finished!");
+            faceButton.setIcon(sunglassesFaceIcon);
         }
     }
 
@@ -283,28 +412,36 @@ public class Window{
         // Ref https://stackoverflow.com/questions/15393385/how-to-change-text-color-of-a-jbutton
         // Ref https://www.reddit.com/r/Minesweeper/comments/g7jzri/what_are_the_google_minesweeper_colors/
         if (cellValue == 1){
-            cell.setForeground(Color.blue);
+            // dark blue
+            cell.setForeground(new Color(30, 30, 255));
         }
         else if (cellValue == 2){
-            cell.setForeground(Color.green);
+            // Darkish green
+            cell.setForeground(new Color(30, 160, 30));
         }
         else if (cellValue == 3){
-            cell.setForeground(Color.red);
+            // Red
+            cell.setForeground(new Color(250, 30, 30));
         }
         else if (cellValue == 4){
-            cell.setForeground(Color.magenta);
+            // Magenta
+            cell.setForeground(new Color(250, 30, 250));
         }
         else if (cellValue == 5){
-            cell.setForeground(Color.yellow);
+            // Yellow
+            cell.setForeground(new Color(250, 250, 30));
         }
         else if (cellValue == 6){
-            cell.setForeground(Color.cyan);
+            // Cyan
+            cell.setForeground(new Color(30, 255, 255));
         }
         else if (cellValue == 7){
-            cell.setForeground(Color.darkGray);
+            // DarkGray
+            cell.setForeground(new Color(80, 80, 90));
         }
         else if (cellValue == 8){
-            cell.setForeground(Color.lightGray);
+            // Light Gray
+            cell.setForeground(new Color(130, 140, 130));
         }
 
         cell.setText(cellValue + "");
@@ -336,6 +473,41 @@ public class Window{
                 }
             }
         }
+    }
+
+    private boolean hasWon(){
+        for (int row = 0; row < ms.getBoardHeight(); row++){
+            for (int col = 0; col < ms.getBoardWidth(); col++){
+                if (ms.getCellValue(row, col) != -1){
+                    JButton curCell = (JButton)gamePanel.getComponent(row * ms.getBoardWidth() + col);
+                    if (!curCell.getName().equals("checked")){
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+    private void resetGame(){
+        gameOver = false;
+        ms.setBoardCreated(false);
+        
+        numFlags = ms.getNumMines();
+        flagLabel.setText("" + numFlags);
+        
+        elapsedTime = 0;
+        timer.stop();
+        updateTimeLabel();
+
+        faceButton.setIcon(smileyFaceIcon);
+
+        frame.remove(gamePanel);
+
+        generateButtonGrid();
+
+        frame.pack();
+        frame.setVisible(true);
     }
 
     private void updateTimeLabel() {
