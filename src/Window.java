@@ -82,14 +82,16 @@ public class Window{
         raisedBevel = BorderFactory.createRaisedBevelBorder();
 
         // Initialize Image Icons
+        System.out.println(System.getProperty("user.dir"));
+
         try{
-            flagImg = ImageIO.read(new File(System.getProperty("user.dir") + "\\res\\images\\flag.png"));
+            flagImg = ImageIO.read(new File(System.getProperty("user.dir") + "/res/images/flag.png"));
         } catch (IOException ex) {
             ex.printStackTrace();
         }
 
         try{
-            mineImg = ImageIO.read(new File(System.getProperty("user.dir") + "\\res\\images\\mine.png"));
+            mineImg = ImageIO.read(new File(System.getProperty("user.dir") + "/res/images/mine.png"));
         } catch (IOException ex) {
             ex.printStackTrace();
         }
@@ -137,19 +139,19 @@ public class Window{
 
         //Setup smiley face images
         try{
-            Image img = ImageIO.read(new File(System.getProperty("user.dir") + "\\res\\images\\faces\\smile.png"));
+            Image img = ImageIO.read(new File(System.getProperty("user.dir") + "/res/images/faces/smile.png"));
             newImg = img.getScaledInstance(UI_HEIGHT - 18, UI_HEIGHT - 18, Image.SCALE_DEFAULT);
             smileyFaceIcon = new ImageIcon(newImg);
 
-            img = ImageIO.read(new File(System.getProperty("user.dir") + "\\res\\images\\faces\\dead.png"));
+            img = ImageIO.read(new File(System.getProperty("user.dir") + "/res/images/faces/dead.png"));
             newImg = img.getScaledInstance(faceButtonWidth - 10, faceButtonWidth - 10, Image.SCALE_FAST);
             deadFaceIcon = new ImageIcon(newImg);
 
-            img = ImageIO.read(new File(System.getProperty("user.dir") + "\\res\\images\\faces\\surprised.png"));
+            img = ImageIO.read(new File(System.getProperty("user.dir") + "/res/images/faces/surprised.png"));
             newImg = img.getScaledInstance(faceButtonWidth - 10, faceButtonWidth - 10, Image.SCALE_FAST);
             surprisedFaceIcon = new ImageIcon(newImg);
 
-            img = ImageIO.read(new File(System.getProperty("user.dir") + "\\res\\images\\faces\\sunglasses.png"));
+            img = ImageIO.read(new File(System.getProperty("user.dir") + "/res/images/faces/sunglasses.png"));
             newImg = img.getScaledInstance(faceButtonWidth - 10, faceButtonWidth - 10, Image.SCALE_FAST);
             sunglassesFaceIcon = new ImageIcon(newImg);
         } catch (IOException ex) {
